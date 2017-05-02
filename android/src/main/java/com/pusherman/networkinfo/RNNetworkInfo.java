@@ -9,64 +9,63 @@ import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+
+import java.net.Inet4Address;
 import java.net.InetAddress;
 
 import java.net.NetworkInterface;
 import java.util.Enumeration;
 
 public class RNNetworkInfo extends ReactContextBaseJavaModule {
-  WifiManager wifi;
-
-  public static final String TAG = "RNNetworkInfo";
-
-  public RNNetworkInfo(ReactApplicationContext reactContext) {
-    super(reactContext);
-
-    wifi = (WifiManager)reactContext.getApplicationContext()
-            .getSystemService(Context.WIFI_SERVICE);
-  }
-
-  @Override
-  public String getName() {
-    return TAG;
-  }
-
-  @ReactMethod
-  public void getSSID(final Callback callback) {
-    WifiInfo info = wifi.getConnectionInfo();
-
-    // This value should be wrapped in double quotes, so we need to unwrap it.
-    String ssid = info.getSSID();
-    if (ssid.startsWith("\"") && ssid.endsWith("\"")) {
-      ssid = ssid.substring(1, ssid.length() - 1);
+    WifiManager wifi;
+    
+    public static final String TAG = "RNNetworkInfo";
+    
+    public RNNetworkInfo(ReactApplicationContext reactContext) {
+        super(reactContext);
+        
+        wifi = (WifiManager)reactContext.getApplicationContext()
+        .getSystemService(Context.WIFI_SERVICE);
     }
-
-    callback.invoke(ssid);
-  }
-
-  @ReactMethod
-  public void getBSSID(final Callback callback) {
-    callback.invoke(wifi.getConnectionInfo().getBSSID());
-  }
-
-  @ReactMethod
-  public void getIPAddress(final Callback callback) {
-    String ipAddress = null;
-
-    try {
-      for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
-        NetworkInterface intf = en.nextElement();
-        for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
-          InetAddress inetAddress = enumIpAddr.nextElement();
-          if (!inetAddress.isLoopbackAddress()) {
-            ipAddress = inetAddress.getHostAddress();
-          }
+    
+    @Override
+    public String getName() {
+        return TAG;
+    }
+    
+    @ReactMethod
+    public void getSSID(final Callback callback) {
+        WifiInfo info = wifi.getConnectionInfo();
+        
+        // This value should be wrapped in double quotes, so we need to unwrap it.
+        String ssid = info.getSSID();
+        if (ssid.startsWith("\"") && ssid.endsWith("\"")) {
+            ssid = ssid.substring(1, ssid.length() - 1);
         }
-      }
-    } catch (Exception ex) {
-      Log.e(TAG, ex.toString());
+        
+        callback.invoke(ssid);
     }
-
-    callback.invoke(ipAddress);
-  }
+    
+    @ReactMethod
+    public void getIPAddress(final Callback callback) {
+        String ipAddress = null;
+        
+        try {
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+                NetworkInterface intf = en.nextElement();
+                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+                    InetAddress inetAddress = enumIpAddr.nextElement();
+                    if (!inetAddress.isLoopbackAddress() && (inetAddress instanceof Inet4Address)) {
+                        ipAddress = inetAddress.getHostAddress();
+                        System.out.println("--- Fresh IP4 address fetched ---");
+                        break;
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            Log.e(TAG, ex.toString());
+        }
+        
+        callback.invoke(ipAddress);
+    }
 }
